@@ -385,6 +385,7 @@ name = "engine_proxy"
 version = "0.1.0"
 dependencies = [
  "env_logger",
+ "futures-util",
  "hyper-reverse-proxy",
  "lazy_static",
  "log",
@@ -1978,6 +1979,7 @@ dependencies = [
  "deno_core",
  "diesel",
  "hyper 0.14.15",
+ "log",
  "parking_lot 0.11.2",
  "serde",
  "serde_yaml",

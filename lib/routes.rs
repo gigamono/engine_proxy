@@ -1,11 +1,11 @@
 // Copyright 2021 the Gigamono authors. All rights reserved. Apache 2.0 license.
 
-use std::{convert::TryInto, net::IpAddr};
-
+use std::{convert::TryInto, net::IpAddr, sync::Arc};
 use utilities::{
     errors::{self, HandlerError, HandlerErrorMessage},
-    http::{self, Body, Request, Response, StatusCode},
+    http::{self, Body, Request, Response},
     result::HandlerResult,
+    setup::CommonSetup,
 };
 
 use crate::proxy::{Proxy, ProxyError};
@@ -16,31 +16,35 @@ impl Router {
     pub async fn route(
         mut request: Request<Body>,
         client_ip: IpAddr,
+        setup: Arc<CommonSetup>,
     ) -> HandlerResult<Response<Body>> {
         let path = request.uri().path();
+        let backend_forward_uri =
+            &format!("http://127.0.0.1:{}", setup.config.engines.backend.port);
+        let workspace_forward_uri =
+            &format!("http://127.0.0.1:{}", setup.config.engines.workspace.port);
 
-        // TODO(appcypher): Support "/" and "/workspaces/" routes.
         // Routing.
         if path.starts_with("/r/") {
             // If the path starts with "/r/".
 
             Self::set_headers(&mut request)?;
-            Proxy::call(client_ip, "http://127.0.0.1:5051", request) // TODO(appcypher)
+            Proxy::call(client_ip, backend_forward_uri, request) // TODO(appcypher)
                 .await
                 .map_err(Self::proxy_error)
         } else if let Ok(_) = http::parse_url_path_number(path) {
             // If the path starts with a number (like "/2/system/load/prometheus/index.css").
 
             Self::set_headers(&mut request)?;
-            Proxy::call(client_ip, "http://127.0.0.1:5051", request) // TODO(appcypher)
+            Proxy::call(client_ip, backend_forward_uri, request) // TODO(appcypher)
                 .await
                 .map_err(Self::proxy_error)
         } else {
-            Err(HandlerError::Client {
-                ctx: HandlerErrorMessage::NotFound,
-                code: StatusCode::NOT_FOUND,
-                src: errors::new_error(format!(r#"resource not found "{}""#, path)),
-            })
+            // Everything else.
+
+            Proxy::call(client_ip, workspace_forward_uri, request) // TODO(appcypher)
+                .await
+                .map_err(Self::proxy_error)
         }
     }
 

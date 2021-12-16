@@ -21,6 +21,7 @@ log = "0.4.14"
 hyper-reverse-proxy = "0.4.0"
 unicase = "2.5.0"
 lazy_static = "1.4.0"
+futures-util = "0.3.17"
 
 [lib]
 name = "engine_proxy"

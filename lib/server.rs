@@ -1,14 +1,17 @@
 // Copyright 2021 the Gigamono authors. All rights reserved. Apache 2.0 license.
 
+use futures_util::FutureExt;
 use log::{error, info};
 use std::{
     convert::Infallible,
     future::Future,
     net::{IpAddr, SocketAddr},
+    panic::AssertUnwindSafe,
     sync::Arc,
 };
 use utilities::{
     http::{
+        self,
         server::conn::AddrStream,
         service::{make_service_fn, service_fn},
         Body, Request, Response, Server,
@@ -38,14 +41,16 @@ impl ProxyServer {
 
         info!(r#"Socket address = "{}""#, addr);
 
-        let make_svc = make_service_fn(|socket: &AddrStream| {
+        let make_svc = make_service_fn(move |socket: &AddrStream| {
             let client_ip = socket.remote_addr().ip();
 
             info!(r#"Remote client ip = "{}""#, client_ip);
 
+            let setup = Arc::clone(&self.setup);
+
             async move {
                 Ok::<_, Infallible>(service_fn(move |request| {
-                    Self::handler_error_wrap(Router::route, request, client_ip)
+                    Self::handler_panic_wrap(Router::route, request, client_ip, Arc::clone(&setup))
                 }))
             }
         });
@@ -55,25 +60,26 @@ impl ProxyServer {
         Ok(server.await?)
     }
 
-    #[inline]
-    async fn handler_error_wrap<F, Fut>(
+    async fn handler_panic_wrap<F, Fut>(
         func: F,
         request: Request<Body>,
         client_ip: IpAddr,
+        setup: Arc<CommonSetup>,
     ) -> std::result::Result<Response<Body>, Infallible>
     where
-        F: FnOnce(Request<Body>, IpAddr) -> Fut,
+        F: FnOnce(Request<Body>, IpAddr, Arc<CommonSetup>) -> Fut,
         Fut: Future<Output = HandlerResult<Response<Body>>>,
     {
-        match func(request, client_ip).await {
-            Ok(response) => Ok(response),
-            Err(err) => {
-                // Log error.
-                error!("{:?}", err.system_error());
-
-                // Return error response.
+        match AssertUnwindSafe(func(request, client_ip, setup))
+            .catch_unwind()
+            .await
+        {
+            Ok(Ok(response)) => Ok(response),
+            Ok(Err(err)) => {
+                error!("{:?}", err);
                 Ok(err.as_hyper_response())
             }
+            Err(err) => http::handle_panic_error_t(err),
         }
     }
 }
