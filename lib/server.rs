@@ -5,7 +5,7 @@ use log::{error, info};
 use std::{
     convert::Infallible,
     future::Future,
-    net::{IpAddr, SocketAddr},
+    net::{IpAddr, SocketAddr, ToSocketAddrs},
     panic::AssertUnwindSafe,
     sync::Arc,
 };
@@ -16,6 +16,7 @@ use utilities::{
         service::{make_service_fn, service_fn},
         Body, Request, Response, Server,
     },
+    ip,
     result::{HandlerResult, Result},
     setup::CommonSetup,
 };
@@ -36,8 +37,7 @@ impl ProxyServer {
         env_logger::init();
 
         // Get socket address.
-        let socket_address = &self.setup.config.engines.proxy.socket_address;
-        let addr: SocketAddr = socket_address.parse()?;
+        let addr = ip::parse_socket_address(&self.setup.config.engines.proxy.socket_address)?;
 
         info!(r#"Socket address = "{}""#, addr);
 
