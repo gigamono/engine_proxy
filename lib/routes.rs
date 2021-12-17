@@ -20,9 +20,9 @@ impl Router {
     ) -> HandlerResult<Response<Body>> {
         let path = request.uri().path();
         let backend_forward_uri =
-            &format!("http://127.0.0.1:{}", setup.config.engines.backend.port);
+            &format!("http://{}", setup.config.engines.backend.socket_address);
         let workspace_forward_uri =
-            &format!("http://127.0.0.1:{}", setup.config.engines.workspace.port);
+            &format!("http://{}", setup.config.engines.workspace.socket_address);
 
         // Routing.
         if path.starts_with("/r/") {
