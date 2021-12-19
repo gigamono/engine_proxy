@@ -28,5 +28,5 @@ name = "engine_proxy"
 path = "lib/lib.rs"
 
 [[bin]]
-name = "server"
+name = "proxy_server"
 path = "bin/proxy_server.rs"
