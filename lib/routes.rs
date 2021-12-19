@@ -3,9 +3,9 @@
 use std::{convert::TryInto, net::IpAddr, sync::Arc};
 use utilities::{
     errors::{self, HandlerError, HandlerErrorMessage},
-    http::{self, Body, Request, Response},
+    hyper::{Body, Request, Response},
     result::HandlerResult,
-    setup::CommonSetup,
+    setup::CommonSetup, http,
 };
 
 use crate::proxy::{Proxy, ProxyError};
@@ -25,15 +25,8 @@ impl Router {
             &format!("http://{}", setup.config.engines.workspace.socket_address);
 
         // Routing.
-        if path.starts_with("/r/") {
-            // If the path starts with "/r/".
-
-            Self::set_headers(&mut request)?;
-            Proxy::call(client_ip, backend_forward_uri, request) // TODO(appcypher)
-                .await
-                .map_err(Self::proxy_error)
-        } else if let Ok(_) = http::parse_url_path_number(path) {
-            // If the path starts with a number (like "/2/system/load/prometheus/index.css").
+        if path.starts_with("/api/") {
+            // If the path starts with "/api/".
 
             Self::set_headers(&mut request)?;
             Proxy::call(client_ip, backend_forward_uri, request) // TODO(appcypher)
@@ -51,7 +44,7 @@ impl Router {
     fn set_headers(request: &mut Request<Body>) -> HandlerResult<()> {
         // TODO(appcypher): Get value from workspaces TiKV.
         let headers = request.headers_mut();
-        let value = "9ccec027-68a3-47a2-bd3d-85a9c6faebfb"
+        let value = "unreachable"
             .try_into()
             .map_err(|err| HandlerError::Internal {
                 ctx: HandlerErrorMessage::InternalError,

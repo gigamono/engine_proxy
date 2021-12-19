@@ -4,10 +4,10 @@
 use lazy_static::lazy_static;
 use std::net::IpAddr;
 use std::str::FromStr;
-use utilities::http::header::{Entry, HeaderMap, HeaderValue};
-use utilities::http::http::header::{InvalidHeaderValue, ToStrError};
-use utilities::http::http::uri::InvalidUri;
-use utilities::http::{Body, Client, Error, Request, Response, Uri};
+use utilities::hyper::header::{Entry, HeaderMap, HeaderValue};
+use utilities::hyper::http::header::{InvalidHeaderValue, ToStrError};
+use utilities::hyper::http::uri::InvalidUri;
+use utilities::hyper::{Body, Client, Error, Request, Response, Uri};
 
 #[derive(Debug)]
 pub enum ProxyError {

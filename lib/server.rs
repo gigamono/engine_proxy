@@ -2,16 +2,10 @@
 
 use futures_util::FutureExt;
 use log::{error, info};
-use std::{
-    convert::Infallible,
-    future::Future,
-    net::{IpAddr, SocketAddr, ToSocketAddrs},
-    panic::AssertUnwindSafe,
-    sync::Arc,
-};
+use std::{convert::Infallible, future::Future, net::IpAddr, panic::AssertUnwindSafe, sync::Arc};
 use utilities::{
-    http::{
-        self,
+    http,
+    hyper::{
         server::conn::AddrStream,
         service::{make_service_fn, service_fn},
         Body, Request, Response, Server,
