@@ -3,9 +3,10 @@
 use std::{convert::TryInto, net::IpAddr, sync::Arc};
 use utilities::{
     errors::{self, HandlerError, HandlerErrorMessage},
+    http,
     hyper::{Body, Request, Response},
     result::HandlerResult,
-    setup::CommonSetup, http,
+    setup::CommonSetup,
 };
 
 use crate::proxy::{Proxy, ProxyError};
@@ -19,22 +20,25 @@ impl Router {
         setup: Arc<CommonSetup>,
     ) -> HandlerResult<Response<Body>> {
         let path = request.uri().path();
-        let backend_forward_uri =
-            &format!("http://{}", setup.config.engines.backend.socket_address);
+
+        // Workspace uri.
         let workspace_forward_uri =
             &format!("http://{}", setup.config.engines.workspace.socket_address);
+
+        // TODO(appcypher): Should get the right backend uri from a request to workspace.
+        let backend_forward_uri =
+            &format!("http://{}", setup.config.engines.backend.socket_address);
 
         // Routing.
         if path.starts_with("/api/") {
             // If the path starts with "/api/".
-
             Self::set_headers(&mut request)?;
+
             Proxy::call(client_ip, backend_forward_uri, request) // TODO(appcypher)
                 .await
                 .map_err(Self::proxy_error)
         } else {
             // Everything else.
-
             Proxy::call(client_ip, workspace_forward_uri, request) // TODO(appcypher)
                 .await
                 .map_err(Self::proxy_error)
