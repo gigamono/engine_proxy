@@ -1,5 +1,5 @@
-// Copyright 2021 the Gigamono authors. All rights reserved. Apache 2.0 license.
-// Based on https://github.com/felipenoris/hyper-reverse-proxy. Copyright the hyper-reverse-proxy authors. Apache 2.0 license.
+// Copyright 2021 the Gigamono authors. All rights reserved. GPL-3.0 License.
+// Based on https://github.com/felipenoris/hyper-reverse-proxy. Copyright the hyper-reverse-proxy authors. GPL-3.0 License.
 
 use lazy_static::lazy_static;
 use std::net::IpAddr;
