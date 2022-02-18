@@ -20,21 +20,26 @@ impl Router {
         setup: Arc<CommonSetup>,
     ) -> HandlerResult<Response<Body>> {
         let path = request.uri().path();
+        let config = &setup.config;
 
         // Workspace uri.
         let workspace_forward_uri =
-            &format!("http://{}", setup.config.engines.workspace.socket_address);
+            &format!("http://{}", config.engines.workspace.socket_address);
 
-        // TODO(appcypher): Should get the right backend uri from a request to workspace.
-        let backend_forward_uri =
-            &format!("http://{}", setup.config.engines.backend.socket_address);
+        // TODO(appcypher): Should get the right runtime uri from a request to workspace.
+        let runtime_forward_uri =
+            &format!("http://{}", config.engines.runtime.socket_address);
 
         // Routing.
         if path.starts_with("/api/") {
             // If the path starts with "/api/".
-            Self::set_headers(&mut request)?;
 
-            Proxy::call(client_ip, backend_forward_uri, request) // TODO(appcypher)
+            // Check if we can map multiple workspaces to a volume or db.
+            if config.volume.multi_workspace || config.db.multi_workspace {
+                Self::set_headers(&mut request)?;
+            }
+
+            Proxy::call(client_ip, runtime_forward_uri, request) // TODO(appcypher)
                 .await
                 .map_err(Self::proxy_error)
         } else {
@@ -46,9 +51,14 @@ impl Router {
     }
 
     fn set_headers(request: &mut Request<Body>) -> HandlerResult<()> {
-        // TODO(appcypher): Get value from workspaces TiKV.
+        // TODO(appcypher): Get workspace id from request to workspaces.
         let headers = request.headers_mut();
-        let value = "unreachable"
+
+        // TODO(appcypher):
+        // This should be a random string of exactly 15 UTF-8 codepoints..
+        // The reason for 15 characters is because of the mysql db name restriction.
+        // 15 out of 64 characters allowed by mysql are reserved for the workspace id.
+        let value = "first_workspace"
             .try_into()
             .map_err(|err| HandlerError::Internal {
                 ctx: HandlerErrorMessage::InternalError,

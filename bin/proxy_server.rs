@@ -10,6 +10,9 @@ use utilities::setup::CommonSetup;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Initialize logger.
+    env_logger::init();
+
     let setup = Arc::new(CommonSetup::new().await?);
     let server = ProxyServer::new(setup);
     server.listen().await

@@ -27,9 +27,6 @@ impl ProxyServer {
     }
 
     pub async fn listen(&self) -> Result<()> {
-        // Initialize logger.
-        env_logger::init();
-
         // Get socket address.
         let addr = ip::parse_socket_address(&self.setup.config.engines.proxy.socket_address)?;
 
